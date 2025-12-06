@@ -1,0 +1,463 @@
+Create a fully functional internal academy management web application for ILT Academy.
+This system will be used ONLY for internal monitoring and management (not promotions or marketing).
+
+Build using:
+
+Frontend: React/Next.js
+
+Backend: Node.js + Express
+
+Database: MongoDB or PostgreSQL
+
+Authentication: Role-based login (Admin, Teacher, Parent/Student)
+
+
+
+---
+
+🎯 MAIN MODULES REQUIRED
+
+✔ Student Management System
+
+Must allow:
+
+Add/edit student details
+
+Assign student to batches
+
+Deactivate student
+
+Store parent details
+
+Track academic category (11/12/JEE/NEET stream)
+
+
+Student profile must include:
+
+Attendance summary
+
+Fees status
+
+Test performance summary
+
+Homework status
+
+
+
+---
+
+✔ Teacher Management Module
+
+Teacher account features:
+
+View only assigned batches
+
+Upload homework
+
+Enter marks
+
+Take attendance
+
+Record daily teaching progress
+
+Mark lectures completed or pending
+
+
+Admin features:
+
+Teacher performance history
+
+Monthly workload tracking (hours/classes completed)
+
+
+
+---
+
+✔ Attendance Management
+
+Features required:
+
+Mark daily attendance batch-wise
+
+Subject-wise attendance
+
+Reason for absence selection
+
+Attendance flags:
+
+Red (<70%)
+
+Orange (70–85%)
+
+Green (>85%)
+
+
+
+Auto Analytics:
+
+Monthly attendance graph
+
+Irregularity detection
+
+Late coming patterns
+
+
+
+---
+
+✔ Homework & Assignment System
+
+Teachers should be able to:
+
+Upload homework
+
+Mark mandatory / optional
+
+Attach documents (PDF, images)
+
+
+Parents/students should:
+
+Mark “Completed”
+
+
+Admin should get analytics:
+
+Pending vs completed students per batch
+
+Delay reports
+
+
+
+---
+
+✔ Batches and Timetable Setup
+
+Admin should:
+
+Create batch
+
+Assign room
+
+Assign faculty
+
+Assign subjects & timings
+
+
+System must detect clashes:
+
+Room conflict
+
+Teacher already assigned elsewhere
+
+
+Students must see:
+
+Their timetable only
+
+
+
+---
+
+✔ Fees & Finance Module
+
+Admin features:
+
+Create student-wise fee structure
+
+Manage installments
+
+Track overdue payments
+
+Record payments manually
+
+Auto penalty calculation
+
+Download receipts
+
+
+Parents view:
+
+Remaining balance
+
+Paid history
+
+Receipt download
+
+
+Reports needed:
+
+Month-wise due list
+
+Defaulter report
+
+Ledger export
+
+
+
+---
+
+✔ Test and Marks Management
+
+Teachers/admin should:
+
+Schedule test
+
+Upload test paper
+
+Enter marks manually or CSV
+
+Upload corrected sheets
+
+
+System auto-calculates:
+
+Rank
+
+Subject-wise scoring
+
+Negative marking
+
+Class average
+
+Topper list
+
+
+Advanced analytics:
+
+Weak chapter detection
+
+Subject-wise gap analysis
+
+Performance comparison between tests
+
+
+Generate:
+
+Student progress cards
+
+Printable PDFs
+
+
+
+---
+
+✔ Study Material & Digital Content Storage
+
+Admin/teachers should upload:
+
+Notes PDFs
+
+Test PDFs
+
+Solutions
+
+Reference links
+
+
+Students see:
+
+Organized subject-wise files
+
+
+
+---
+
+✔ Parent Interaction Panel
+
+Parents should:
+
+View attendance
+
+View homework
+
+View test results
+
+Raise queries/complaints
+
+
+Teachers/admin must respond through system
+(not WhatsApp)
+
+
+---
+
+✔ Certificate & Document Generator
+
+Generate automatically:
+
+Bonafide certificate
+
+Fee paid certificate
+
+Leaving certificate
+
+
+Must include:
+
+Dynamic student info
+
+Download PDF
+
+
+
+---
+
+✔ Logbook Module (Daily Student Timeline)
+
+Every lecture entry must include:
+
+What was taught
+
+Homework assigned
+
+Test updates
+
+Teacher remark
+
+
+Admin sees:
+
+Learning journey of each student
+
+
+
+---
+
+✔ Improvement Prediction (AI Logic Needed)
+
+Based on:
+
+Past attendance
+
+Past marks
+
+Homework completion
+
+
+System estimates:
+
+Expected board %
+
+Expected mock scores
+
+
+
+---
+
+🧠 Universal Analytics Dashboard (High Priority)
+
+Dashboard must show metrics clearly:
+
+Admin Dashboard View
+
+Attendance trend charts
+
+Fee outstanding summary
+
+Subject-wise performance chart
+
+Test score distribution
+
+Students who are weak
+
+Students requiring mentoring
+
+Students doing outstanding
+
+
+Teacher Dashboard View
+
+Today's batches
+
+Pending homework uploads
+
+Pending marks entry
+
+Students below threshold
+
+
+Parent Dashboard View
+
+Attendance alert
+
+Homework status
+
+Test analysis
+
+Fee due reminder
+
+
+
+---
+
+🎯 Roles and Permissions Required
+
+Admin
+
+Full access
+
+Teacher
+
+Can only:
+
+Mark attendance
+
+Add homework
+
+Upload marks
+
+View students in assigned batches
+
+
+Cannot: ❌ View fees
+❌ Edit student information
+
+Parent/Student
+
+Only read access:
+
+Attendance
+
+Homework
+
+Performance
+
+Receipts
+
+
+
+---
+
+EXTRA MUST-HAVE FEATURES
+
+✔ QR based Student ID with profile open
+✔ Student categorization tags (e.g. "Needs Mentoring", "Top Performer")
+✔ Asset tracking (chairs, electronics, fans, etc.)
+✔ Book/library issue tracker
+✔ Lost & found log
+✔ Complaint status tracking
+
+
+---
+
+OUTPUT EXPECTATION
+
+Deliver: ✔ Full frontend
+✔ Backend database schema
+✔ Working login
+✔ Dummy sample data
+✔ CRUD for all modules
+✔ Analytics charts
+✔ PDF generators
+✔ CSV/Excel export options
+
+UI must be:
+
+Clean
+
+Dashboard-based
+
+Role filtered
+
+make everything workable in first preview only
