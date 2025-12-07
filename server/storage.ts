@@ -232,7 +232,7 @@ export interface IStorage {
   getUserByRegistrationNumber(registrationNumber: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   updateUserPassword(userId: string, passwordHash: string): Promise<void>;
-  updateUserProfile(userId: string, data: { username?: string; profileImageUrl?: string }): Promise<User | undefined>;
+  updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; username?: string; profileImageUrl?: string }): Promise<User | undefined>;
   generateRegistrationNumber(type: 'student' | 'teacher'): Promise<string>;
   
   // OTP Codes
@@ -802,7 +802,7 @@ export class DatabaseStorage implements IStorage {
     await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
   }
 
-  async updateUserProfile(userId: string, data: { username?: string; profileImageUrl?: string }): Promise<User | undefined> {
+  async updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; username?: string; profileImageUrl?: string }): Promise<User | undefined> {
     const [updated] = await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
     return updated;
   }

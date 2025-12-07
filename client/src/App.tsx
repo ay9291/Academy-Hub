@@ -14,6 +14,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import Profile from "@/pages/profile";
 import Students from "@/pages/students";
 import Teachers from "@/pages/teachers";
 import Batches from "@/pages/batches";
@@ -51,6 +52,7 @@ function AuthenticatedRouter() {
       <Route path="/library" component={Library} />
       <Route path="/lost-found" component={LostFound} />
       <Route path="/my-batches" component={MyBatches} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

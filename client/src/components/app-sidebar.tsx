@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const adminMenuItems = [
@@ -193,7 +194,7 @@ export function AppSidebar() {
                 <p className="text-sm font-medium truncate" data-testid="text-user-name">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <Badge size="sm" variant={getRoleBadgeVariant()} className="text-[10px] capitalize">
+                <Badge variant={getRoleBadgeVariant()} className="text-[10px] capitalize">
                   {role}
                 </Badge>
               </div>
@@ -201,6 +202,12 @@ export function AppSidebar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem asChild data-testid="menu-item-profile">
+              <Link href="/profile" className="flex items-center w-full">
+                <User className="mr-2 h-4 w-4" />
+                My Profile
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem data-testid="menu-item-settings">
               <Settings className="mr-2 h-4 w-4" />
               Settings
