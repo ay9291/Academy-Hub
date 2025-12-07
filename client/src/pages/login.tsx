@@ -5,16 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, Loader2, ArrowLeft } from "lucide-react";
+import { GraduationCap, Loader2, ArrowLeft, Mail, Smartphone } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+
+type OtpMethod = 'email' | 'phone' | null;
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [otpMethod, setOtpMethod] = useState<OtpMethod>(null);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
   
   const [loginForm, setLoginForm] = useState({
     registrationNumber: "",
@@ -52,7 +56,7 @@ export default function Login() {
     }
   };
 
-  const handleRequestOtp = async () => {
+  const handleRequestEmailOtp = async () => {
     if (!otpForm.registrationNumber) {
       toast({
         title: "Error",
@@ -85,7 +89,42 @@ export default function Login() {
     }
   };
 
-  const handleOtpLogin = async (e: React.FormEvent) => {
+  const handleRequestPhoneOtp = async () => {
+    if (!otpForm.registrationNumber) {
+      toast({
+        title: "Error",
+        description: "Please enter your registration number",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await apiRequest("POST", "/api/auth/request-phone-otp", {
+        registrationNumber: otpForm.registrationNumber,
+      });
+      const data = await response.json();
+      
+      setOtpSent(true);
+      setVerificationId(data.verificationId);
+      toast({
+        title: "OTP Sent",
+        description: "Check your phone for the login code",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send OTP",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailOtpLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -109,6 +148,43 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePhoneOtpLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const response = await apiRequest("POST", "/api/auth/verify-phone-otp", {
+        registrationNumber: otpForm.registrationNumber,
+        otp: otpForm.otp,
+        verificationId,
+      });
+      const user = await response.json();
+      
+      queryClient.setQueryData(["/api/auth/user"], user);
+      toast({
+        title: "Welcome back!",
+        description: `Logged in as ${user.firstName} ${user.lastName}`,
+      });
+      setLocation("/");
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "Verification failed",
+        description: error.message || "Invalid OTP",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetOtpFlow = () => {
+    setOtpSent(false);
+    setOtpMethod(null);
+    setVerificationId(null);
+    setOtpForm({ registrationNumber: "", otp: "" });
   };
 
   return (
@@ -143,7 +219,7 @@ export default function Login() {
             <Tabs defaultValue="password" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="password" data-testid="tab-password">Password</TabsTrigger>
-                <TabsTrigger value="otp" data-testid="tab-otp">OTP</TabsTrigger>
+                <TabsTrigger value="otp" onClick={resetOtpFlow} data-testid="tab-otp">OTP</TabsTrigger>
               </TabsList>
               
               <TabsContent value="password">
@@ -177,58 +253,135 @@ export default function Login() {
               </TabsContent>
               
               <TabsContent value="otp">
-                <form onSubmit={handleOtpLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="otpRegistrationNumber">Registration Number</Label>
-                    <Input
-                      id="otpRegistrationNumber"
-                      placeholder="e.g., STU001 or STU001p for parent"
-                      value={otpForm.registrationNumber}
-                      onChange={(e) => setOtpForm({ ...otpForm, registrationNumber: e.target.value })}
-                      disabled={otpSent}
-                      data-testid="input-otp-registration"
-                    />
+                {!otpMethod && !otpSent && (
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otpRegistrationNumber">Registration Number</Label>
+                      <Input
+                        id="otpRegistrationNumber"
+                        placeholder="e.g., STU001 or STU001p for parent"
+                        value={otpForm.registrationNumber}
+                        onChange={(e) => setOtpForm({ ...otpForm, registrationNumber: e.target.value })}
+                        data-testid="input-otp-registration"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Choose OTP delivery method:</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          className="flex flex-col gap-2 h-auto py-4"
+                          onClick={() => {
+                            setOtpMethod('email');
+                            handleRequestEmailOtp();
+                          }}
+                          disabled={isLoading || !otpForm.registrationNumber}
+                          data-testid="button-otp-email"
+                        >
+                          {isLoading && otpMethod === 'email' ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                            <Mail className="h-6 w-6" />
+                          )}
+                          <span>Email OTP</span>
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          className="flex flex-col gap-2 h-auto py-4"
+                          onClick={() => {
+                            setOtpMethod('phone');
+                            handleRequestPhoneOtp();
+                          }}
+                          disabled={isLoading || !otpForm.registrationNumber}
+                          data-testid="button-otp-phone"
+                        >
+                          {isLoading && otpMethod === 'phone' ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                            <Smartphone className="h-6 w-6" />
+                          )}
+                          <span>Phone OTP</span>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  
-                  {!otpSent ? (
+                )}
+                
+                {otpSent && otpMethod === 'email' && (
+                  <form onSubmit={handleEmailOtpLogin} className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otpRegistrationNumberSent">Registration Number</Label>
+                      <Input
+                        id="otpRegistrationNumberSent"
+                        value={otpForm.registrationNumber}
+                        disabled
+                        data-testid="input-otp-registration-sent"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emailOtp">Enter OTP (sent to email)</Label>
+                      <Input
+                        id="emailOtp"
+                        placeholder="Enter 6-digit code"
+                        value={otpForm.otp}
+                        onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value })}
+                        data-testid="input-email-otp-code"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-verify-email-otp">
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Verify & Sign In
+                    </Button>
                     <Button 
                       type="button" 
-                      className="w-full" 
-                      onClick={handleRequestOtp}
-                      disabled={isLoading}
-                      data-testid="button-request-otp"
+                      variant="ghost" 
+                      className="w-full"
+                      onClick={resetOtpFlow}
+                      data-testid="button-back-to-methods"
                     >
-                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Send OTP to Email
+                      Back to OTP methods
                     </Button>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="otp">Enter OTP</Label>
-                        <Input
-                          id="otp"
-                          placeholder="Enter 6-digit code"
-                          value={otpForm.otp}
-                          onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value })}
-                          data-testid="input-otp-code"
-                        />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-verify-otp">
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Verify & Sign In
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        className="w-full"
-                        onClick={() => setOtpSent(false)}
-                        data-testid="button-resend-otp"
-                      >
-                        Resend OTP
-                      </Button>
-                    </>
-                  )}
-                </form>
+                  </form>
+                )}
+                
+                {otpSent && otpMethod === 'phone' && (
+                  <form onSubmit={handlePhoneOtpLogin} className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneOtpRegistrationNumber">Registration Number</Label>
+                      <Input
+                        id="phoneOtpRegistrationNumber"
+                        value={otpForm.registrationNumber}
+                        disabled
+                        data-testid="input-phone-otp-registration"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneOtp">Enter OTP (sent to phone)</Label>
+                      <Input
+                        id="phoneOtp"
+                        placeholder="Enter 6-digit code"
+                        value={otpForm.otp}
+                        onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value })}
+                        data-testid="input-phone-otp-code"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-verify-phone-otp">
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Verify & Sign In
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="w-full"
+                      onClick={resetOtpFlow}
+                      data-testid="button-back-to-methods-phone"
+                    >
+                      Back to OTP methods
+                    </Button>
+                  </form>
+                )}
               </TabsContent>
             </Tabs>
             

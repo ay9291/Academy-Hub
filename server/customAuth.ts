@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { sendPasswordResetEmail, sendOtpEmail, sendWelcomeEmail } from "./emailService";
+import { sendPhoneOtp, verifyPhoneOtp } from "./phoneOtpService";
 import { generateOtp } from "./otpService";
 
 export function getSession() {
@@ -183,6 +184,99 @@ export async function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("OTP verification error:", error);
+      res.status(500).json({ message: "OTP verification failed" });
+    }
+  });
+
+  app.post("/api/auth/request-phone-otp", async (req: Request, res: Response) => {
+    try {
+      const { registrationNumber } = req.body;
+      
+      if (!registrationNumber) {
+        return res.status(400).json({ message: "Registration number is required" });
+      }
+
+      let actualRegNumber = registrationNumber;
+      if (registrationNumber.endsWith('p') || registrationNumber.endsWith('P')) {
+        actualRegNumber = registrationNumber.slice(0, -1);
+      }
+
+      const user = await storage.getUserByRegistrationNumber(actualRegNumber);
+      
+      if (!user || !user.phone) {
+        return res.status(404).json({ message: "User not found or phone not set" });
+      }
+
+      const result = await sendPhoneOtp(user.phone);
+      
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Failed to send OTP" });
+      }
+
+      await storage.createOtpCode({
+        registrationNumber: registrationNumber,
+        code: result.verificationId!,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      });
+
+      res.json({ 
+        message: "OTP sent to your registered phone number",
+        verificationId: result.verificationId,
+      });
+    } catch (error) {
+      console.error("Phone OTP request error:", error);
+      res.status(500).json({ message: "Failed to send OTP" });
+    }
+  });
+
+  app.post("/api/auth/verify-phone-otp", async (req: Request, res: Response) => {
+    try {
+      const { registrationNumber, otp, verificationId } = req.body;
+      
+      if (!registrationNumber || !otp || !verificationId) {
+        return res.status(400).json({ message: "Registration number, OTP, and verification ID are required" });
+      }
+
+      let actualRegNumber = registrationNumber;
+      let isParentLogin = false;
+
+      if (registrationNumber.endsWith('p') || registrationNumber.endsWith('P')) {
+        actualRegNumber = registrationNumber.slice(0, -1);
+        isParentLogin = true;
+      }
+
+      const verifyResult = await verifyPhoneOtp(verificationId, otp);
+      
+      if (!verifyResult.success) {
+        return res.status(401).json({ message: "Invalid or expired OTP" });
+      }
+
+      const user = await storage.getUserByRegistrationNumber(actualRegNumber);
+      
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      if (isParentLogin && user.role !== 'student') {
+        return res.status(401).json({ message: "Invalid parent login" });
+      }
+
+      req.session.userId = user.id;
+      req.session.userRole = isParentLogin ? 'parent' : user.role || 'student';
+      req.session.isAuthenticated = true;
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: isParentLogin ? 'parent' : user.role,
+        username: user.username,
+        registrationNumber: isParentLogin ? registrationNumber : actualRegNumber,
+        profileImageUrl: user.profileImageUrl,
+      });
+    } catch (error) {
+      console.error("Phone OTP verification error:", error);
       res.status(500).json({ message: "OTP verification failed" });
     }
   });
