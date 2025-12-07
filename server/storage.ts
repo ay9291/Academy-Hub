@@ -290,7 +290,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(student: InsertStudent): Promise<Student> {
-    const [created] = await db.insert(students).values(student).returning();
+    const enrollmentNumber = await this.generateRegistrationNumber('student');
+    const [created] = await db.insert(students).values({
+      ...student,
+      enrollmentNumber,
+    }).returning();
     return created;
   }
 
@@ -319,7 +323,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTeacher(teacher: InsertTeacher): Promise<Teacher> {
-    const [created] = await db.insert(teachers).values(teacher).returning();
+    const employeeId = await this.generateRegistrationNumber('teacher');
+    const [created] = await db.insert(teachers).values({
+      ...teacher,
+      employeeId,
+    }).returning();
     return created;
   }
 
