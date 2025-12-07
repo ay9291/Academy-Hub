@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = 'ILT Academy <noreply@iltacademy.in>';
 
@@ -9,6 +9,11 @@ export async function sendPasswordResetEmail(
   firstName: string,
   resetLink: string
 ): Promise<boolean> {
+  if (!resend) {
+    console.warn('Email service not configured - skipping password reset email');
+    return false;
+  }
+  
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -64,6 +69,11 @@ export async function sendWelcomeEmail(
   temporaryPassword: string,
   role: string
 ): Promise<boolean> {
+  if (!resend) {
+    console.warn('Email service not configured - skipping welcome email');
+    return false;
+  }
+  
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -117,6 +127,11 @@ export async function sendOtpEmail(
   firstName: string,
   otp: string
 ): Promise<boolean> {
+  if (!resend) {
+    console.warn('Email service not configured - skipping OTP email');
+    return false;
+  }
+  
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
