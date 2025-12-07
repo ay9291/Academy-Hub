@@ -1,5 +1,5 @@
 const PRELUDE_API_KEY = process.env.PRELUDE_API_KEY;
-const PRELUDE_BASE_URL = 'https://api.prelude.so/v2';
+const PRELUDE_BASE_URL = 'https://api.prelude.dev/v2';
 
 interface PreludeVerificationResponse {
   id: string;
@@ -18,7 +18,9 @@ export async function sendPhoneOtp(phoneNumber: string): Promise<{ success: bool
   }
 
   try {
-    const response = await fetch(`${PRELUDE_BASE_URL}/verification`, {
+    const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+    
+    const response = await fetch(`${PRELUDE_BASE_URL}/verification/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,7 +29,7 @@ export async function sendPhoneOtp(phoneNumber: string): Promise<{ success: bool
       body: JSON.stringify({
         target: {
           type: 'phone_number',
-          value: phoneNumber,
+          value: formattedPhone,
         },
       }),
     });
@@ -46,12 +48,14 @@ export async function sendPhoneOtp(phoneNumber: string): Promise<{ success: bool
   }
 }
 
-export async function verifyPhoneOtp(verificationId: string, code: string): Promise<{ success: boolean; error?: string }> {
+export async function verifyPhoneOtp(verificationId: string, code: string, phoneNumber: string): Promise<{ success: boolean; error?: string }> {
   if (!PRELUDE_API_KEY) {
     return { success: false, error: 'Phone OTP service not configured' };
   }
 
   try {
+    const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+    
     const response = await fetch(`${PRELUDE_BASE_URL}/verification/check`, {
       method: 'POST',
       headers: {
@@ -60,8 +64,8 @@ export async function verifyPhoneOtp(verificationId: string, code: string): Prom
       },
       body: JSON.stringify({
         target: {
-          type: 'verification_id',
-          value: verificationId,
+          type: 'phone_number',
+          value: formattedPhone,
         },
         code,
       }),

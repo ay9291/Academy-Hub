@@ -245,16 +245,16 @@ export async function setupAuth(app: Express) {
         isParentLogin = true;
       }
 
-      const verifyResult = await verifyPhoneOtp(verificationId, otp);
+      const user = await storage.getUserByRegistrationNumber(actualRegNumber);
+      
+      if (!user || !user.phone) {
+        return res.status(401).json({ message: "User not found or phone not set" });
+      }
+
+      const verifyResult = await verifyPhoneOtp(verificationId, otp, user.phone);
       
       if (!verifyResult.success) {
         return res.status(401).json({ message: "Invalid or expired OTP" });
-      }
-
-      const user = await storage.getUserByRegistrationNumber(actualRegNumber);
-      
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
       }
 
       if (isParentLogin && user.role !== 'student') {
