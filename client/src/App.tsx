@@ -13,6 +13,8 @@ import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Dashboard from "@/pages/dashboard";
 import Profile from "@/pages/profile";
 import Students from "@/pages/students";
@@ -87,6 +89,8 @@ function UnauthenticatedRouter() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={Landing} />
     </Switch>
   );

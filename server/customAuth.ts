@@ -315,6 +315,27 @@ export async function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/auth/validate-reset-token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+
+      const resetToken = await storage.getValidPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error("Validate reset token error:", error);
+      res.status(500).json({ message: "Token validation failed" });
+    }
+  });
+
   app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
     try {
       const { token, newPassword } = req.body;

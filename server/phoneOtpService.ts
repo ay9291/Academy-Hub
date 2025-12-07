@@ -1,18 +1,11 @@
+import Prelude from '@prelude.so/sdk';
+
 const PRELUDE_API_KEY = process.env.PRELUDE_API_KEY;
-const PRELUDE_BASE_URL = 'https://api.prelude.dev/v2';
 
-interface PreludeVerificationResponse {
-  id: string;
-  status: string;
-}
-
-interface PreludeCheckResponse {
-  id: string;
-  status: 'success' | 'failure' | 'pending';
-}
+const client = PRELUDE_API_KEY ? new Prelude({ apiToken: PRELUDE_API_KEY }) : null;
 
 export async function sendPhoneOtp(phoneNumber: string): Promise<{ success: boolean; verificationId?: string; error?: string }> {
-  if (!PRELUDE_API_KEY) {
+  if (!client) {
     console.warn('Prelude API not configured - skipping phone OTP');
     return { success: false, error: 'Phone OTP service not configured' };
   }
@@ -20,67 +13,39 @@ export async function sendPhoneOtp(phoneNumber: string): Promise<{ success: bool
   try {
     const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
     
-    const response = await fetch(`${PRELUDE_BASE_URL}/verification/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PRELUDE_API_KEY}`,
+    const verification = await client.verification.create({
+      target: {
+        type: 'phone_number',
+        value: formattedPhone,
       },
-      body: JSON.stringify({
-        target: {
-          type: 'phone_number',
-          value: formattedPhone,
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Prelude API error:', error);
-      return { success: false, error: 'Failed to send OTP' };
-    }
-
-    const data: PreludeVerificationResponse = await response.json();
-    return { success: true, verificationId: data.id };
-  } catch (error) {
-    console.error('Phone OTP service error:', error);
-    return { success: false, error: 'Failed to send OTP' };
+    return { success: true, verificationId: verification.id };
+  } catch (error: any) {
+    console.error('Phone OTP service error:', error.message || error);
+    return { success: false, error: error.message || 'Failed to send OTP' };
   }
 }
 
 export async function verifyPhoneOtp(verificationId: string, code: string, phoneNumber: string): Promise<{ success: boolean; error?: string }> {
-  if (!PRELUDE_API_KEY) {
+  if (!client) {
     return { success: false, error: 'Phone OTP service not configured' };
   }
 
   try {
     const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
     
-    const response = await fetch(`${PRELUDE_BASE_URL}/verification/check`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PRELUDE_API_KEY}`,
+    const check = await client.verification.check({
+      target: {
+        type: 'phone_number',
+        value: formattedPhone,
       },
-      body: JSON.stringify({
-        target: {
-          type: 'phone_number',
-          value: formattedPhone,
-        },
-        code,
-      }),
+      code,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Prelude verification error:', error);
-      return { success: false, error: 'Verification failed' };
-    }
-
-    const data: PreludeCheckResponse = await response.json();
-    return { success: data.status === 'success' };
-  } catch (error) {
-    console.error('Phone OTP verification error:', error);
-    return { success: false, error: 'Verification failed' };
+    return { success: check.status === 'success' };
+  } catch (error: any) {
+    console.error('Phone OTP verification error:', error.message || error);
+    return { success: false, error: error.message || 'Verification failed' };
   }
 }
