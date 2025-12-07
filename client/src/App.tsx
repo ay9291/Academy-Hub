@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Students from "@/pages/students";
 import Teachers from "@/pages/teachers";
@@ -79,6 +80,16 @@ function AuthenticatedLayout() {
   );
 }
 
+function UnauthenticatedRouter() {
+  return (
+    <Switch>
+      <Route path="/" component={Landing} />
+      <Route path="/login" component={Login} />
+      <Route component={Landing} />
+    </Switch>
+  );
+}
+
 function AppContent() {
   const { isLoading, isAuthenticated } = useAuth();
 
@@ -91,7 +102,7 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Landing />;
+    return <UnauthenticatedRouter />;
   }
 
   return <AuthenticatedLayout />;

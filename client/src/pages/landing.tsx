@@ -63,7 +63,7 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Button asChild data-testid="button-login">
-              <a href="/api/login">Sign In</a>
+              <a href="/login">Sign In</a>
             </Button>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Button size="lg" asChild data-testid="button-get-started">
-                <a href="/api/login">Get Started</a>
+                <a href="/login">Get Started</a>
               </Button>
               <Button size="lg" variant="outline" data-testid="button-learn-more">
                 Learn More
@@ -138,7 +138,7 @@ export default function Landing() {
             <h3 className="text-2xl font-semibold mb-4">Ready to Transform Your Academy?</h3>
             <p className="mb-8 opacity-90">Sign in now to access your dashboard and start managing your institution effectively.</p>
             <Button size="lg" variant="secondary" asChild data-testid="button-cta-signin">
-              <a href="/api/login">Sign In to Dashboard</a>
+              <a href="/login">Sign In to Dashboard</a>
             </Button>
           </div>
         </section>
