@@ -22,6 +22,9 @@ import {
   bookIssues,
   lostAndFound,
   certificates,
+  otpCodes,
+  passwordResetTokens,
+  registrationCounters,
   type User,
   type UpsertUser,
   type Student,
@@ -68,9 +71,14 @@ import {
   type InsertLostAndFound,
   type Certificate,
   type InsertCertificate,
+  type OtpCode,
+  type InsertOtpCode,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
+  type RegistrationCounter,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -219,6 +227,25 @@ export interface IStorage {
     todayAttendance: number;
     pendingComplaints: number;
   }>;
+
+  // Authentication
+  getUserByRegistrationNumber(registrationNumber: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  updateUserPassword(userId: string, passwordHash: string): Promise<void>;
+  updateUserProfile(userId: string, data: { username?: string; profileImageUrl?: string }): Promise<User | undefined>;
+  generateRegistrationNumber(type: 'student' | 'teacher'): Promise<string>;
+  
+  // OTP Codes
+  createOtpCode(otp: InsertOtpCode): Promise<OtpCode>;
+  getValidOtpCode(registrationNumber: string, code: string): Promise<OtpCode | undefined>;
+  markOtpAsUsed(id: string): Promise<void>;
+  cleanupExpiredOtps(): Promise<void>;
+  
+  // Password Reset Tokens
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getValidPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(id: string): Promise<void>;
+  cleanupExpiredTokens(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -758,6 +785,106 @@ export class DatabaseStorage implements IStorage {
       todayAttendance: Number(attendanceCount?.count || 0),
       pendingComplaints: Number(complaintCount?.count || 0),
     };
+  }
+
+  // Authentication Methods
+  async getUserByRegistrationNumber(registrationNumber: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.registrationNumber, registrationNumber));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+  }
+
+  async updateUserProfile(userId: string, data: { username?: string; profileImageUrl?: string }): Promise<User | undefined> {
+    const [updated] = await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    return updated;
+  }
+
+  async generateRegistrationNumber(type: 'student' | 'teacher'): Promise<string> {
+    const [counter] = await db.select().from(registrationCounters).where(eq(registrationCounters.counterType, type));
+    
+    if (!counter) {
+      const startNumber = type === 'student' ? 10000 : 1000;
+      await db.insert(registrationCounters).values({
+        id: type,
+        counterType: type,
+        lastNumber: startNumber + 1,
+      });
+      return (startNumber + 1).toString();
+    }
+
+    const newNumber = counter.lastNumber + 1;
+    await db.update(registrationCounters).set({ lastNumber: newNumber }).where(eq(registrationCounters.counterType, type));
+    
+    return newNumber.toString();
+  }
+
+  // OTP Codes
+  async createOtpCode(otp: InsertOtpCode): Promise<OtpCode> {
+    const [created] = await db.insert(otpCodes).values(otp).returning();
+    return created;
+  }
+
+  async getValidOtpCode(registrationNumber: string, code: string): Promise<OtpCode | undefined> {
+    const now = new Date();
+    const [otp] = await db.select().from(otpCodes).where(
+      and(
+        eq(otpCodes.registrationNumber, registrationNumber),
+        eq(otpCodes.code, code),
+        eq(otpCodes.isUsed, false)
+      )
+    );
+    
+    if (otp && new Date(otp.expiresAt) > now) {
+      return otp;
+    }
+    return undefined;
+  }
+
+  async markOtpAsUsed(id: string): Promise<void> {
+    await db.update(otpCodes).set({ isUsed: true }).where(eq(otpCodes.id, id));
+  }
+
+  async cleanupExpiredOtps(): Promise<void> {
+    const now = new Date();
+    await db.delete(otpCodes).where(lt(otpCodes.expiresAt, now));
+  }
+
+  // Password Reset Tokens
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [created] = await db.insert(passwordResetTokens).values(token).returning();
+    return created;
+  }
+
+  async getValidPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const now = new Date();
+    const [resetToken] = await db.select().from(passwordResetTokens).where(
+      and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.isUsed, false)
+      )
+    );
+    
+    if (resetToken && new Date(resetToken.expiresAt) > now) {
+      return resetToken;
+    }
+    return undefined;
+  }
+
+  async markPasswordResetTokenAsUsed(id: string): Promise<void> {
+    await db.update(passwordResetTokens).set({ isUsed: true }).where(eq(passwordResetTokens.id, id));
+  }
+
+  async cleanupExpiredTokens(): Promise<void> {
+    const now = new Date();
+    await db.delete(passwordResetTokens).where(lt(passwordResetTokens.expiresAt, now));
   }
 }
 

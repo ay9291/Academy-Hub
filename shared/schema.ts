@@ -28,7 +28,7 @@ export const assetStatusEnum = pgEnum("asset_status", ["available", "in_use", "m
 export const bookStatusEnum = pgEnum("book_status", ["available", "issued", "lost", "damaged"]);
 export const lostFoundStatusEnum = pgEnum("lost_found_status", ["lost", "found", "claimed", "unclaimed"]);
 
-// Session storage table (mandatory for Replit Auth)
+// Session storage table
 export const sessions = pgTable(
   "sessions",
   {
@@ -39,18 +39,48 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Users table (mandatory for Replit Auth with role extension)
+// Users table with custom authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  registrationNumber: varchar("registration_number").unique(),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  username: varchar("username"),
+  passwordHash: varchar("password_hash"),
   profileImageUrl: varchar("profile_image_url"),
   role: userRoleEnum("role").default("parent").notNull(),
   phone: varchar("phone"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// OTP table for authentication
+export const otpCodes = pgTable("otp_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  registrationNumber: varchar("registration_number").notNull(),
+  code: varchar("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: varchar("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Registration number counter table for auto-generation
+export const registrationCounters = pgTable("registration_counters", {
+  id: varchar("id").primaryKey(),
+  counterType: varchar("counter_type").unique().notNull(),
+  lastNumber: integer("last_number").default(0).notNull(),
 });
 
 // Students table
@@ -402,8 +432,10 @@ export const subjectsRelations = relations(subjects, ({ many }) => ({
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertStudentSchema = createInsertSchema(students).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertTeacherSchema = createInsertSchema(teachers).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertStudentSchema = createInsertSchema(students).omit({ id: true, createdAt: true, updatedAt: true, enrollmentNumber: true });
+export const insertTeacherSchema = createInsertSchema(teachers).omit({ id: true, createdAt: true, updatedAt: true, employeeId: true });
+export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true });
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({ id: true, createdAt: true });
 export const insertSubjectSchema = createInsertSchema(subjects).omit({ id: true, createdAt: true });
 export const insertBatchSchema = createInsertSchema(batches).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAttendanceSchema = createInsertSchema(attendance).omit({ id: true, createdAt: true });
@@ -472,3 +504,8 @@ export type InsertBatchTeacher = z.infer<typeof insertBatchTeacherSchema>;
 export type BatchTeacher = typeof batchTeachers.$inferSelect;
 export type InsertBatchStudent = z.infer<typeof insertBatchStudentSchema>;
 export type BatchStudent = typeof batchStudents.$inferSelect;
+export type InsertOtpCode = z.infer<typeof insertOtpCodeSchema>;
+export type OtpCode = typeof otpCodes.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type RegistrationCounter = typeof registrationCounters.$inferSelect;
