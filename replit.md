@@ -8,9 +8,9 @@ ILT Academy Management System is an internal web application for managing academ
 - Frontend: React with TypeScript, Vite build tool
 - UI Framework: shadcn/ui components with Radix UI primitives
 - Styling: Tailwind CSS with custom design system
-- Backend: Node.js with Express
-- Database: PostgreSQL with Drizzle ORM
-- Authentication: Custom session-based authentication with bcrypt
+- Backend: Vercel Serverless Functions (for production) / Express.js (for development)
+- Database: Supabase PostgreSQL with Drizzle ORM
+- Authentication: JWT-based authentication with httpOnly cookies
 - State Management: TanStack Query (React Query)
 
 ## User Preferences
@@ -18,6 +18,40 @@ ILT Academy Management System is an internal web application for managing academ
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
+
+### Deployment Architecture (Vercel)
+
+**Serverless Functions:**
+- All API endpoints are Vercel serverless functions in `/api` directory
+- Each endpoint is a standalone TypeScript file with a default export handler
+- Shared utilities in `/api/_lib/` (db.ts, auth.ts, storage.ts, email.ts)
+- JWT tokens stored in httpOnly cookies for security
+- 256MB memory, 10 second max duration per function
+
+**API Endpoints Structure:**
+```
+/api
+├── _lib/           # Shared utilities (db, auth, storage, email)
+├── auth/           # Authentication (login, logout, refresh, OTP, password reset)
+├── students/       # Student CRUD
+├── teachers/       # Teacher CRUD
+├── subjects/       # Subject CRUD
+├── batches/        # Batch CRUD
+├── attendance/     # Attendance tracking
+├── homework/       # Homework management
+├── tests/          # Test management
+├── fee-structures/ # Fee structures
+├── fee-payments/   # Fee payments
+├── study-materials/# Study materials
+├── complaints/     # Complaints system
+├── logbook/        # Daily class logs
+├── assets/         # Asset management
+├── library-books/  # Library management
+├── book-issues/    # Book issue tracking
+├── lost-found/     # Lost and found
+├── certificates/   # Certificate generation
+└── dashboard/      # Dashboard stats
+```
 
 ### Frontend Architecture
 
@@ -52,28 +86,23 @@ Preferred communication style: Simple, everyday language.
 - Library Management (book inventory, issue/return)
 - Lost & Found tracking
 
-### Backend Architecture
+### Authentication Flow
 
-**API Structure:**
-- RESTful API with Express.js
-- Session-based authentication using express-session with PostgreSQL session store
-- Role-based access control middleware for route protection
-- Centralized error handling and logging
-- Request/response logging with timestamp and duration tracking
-
-**Authentication Flow:**
-- Custom authentication system (not using Passport.js despite its presence in dependencies)
+**JWT-Based Authentication:**
 - Password authentication with bcrypt hashing
-- OTP-based login via email (Resend API) or phone (Prelude API)
+- JWT access tokens (15 min expiry) stored in httpOnly cookies
+- JWT refresh tokens (7 days expiry) stored in httpOnly cookies
+- Token refresh endpoint for seamless session extension
+- OTP-based login via email (Resend API)
 - Password reset flow with token-based validation
-- Session storage in PostgreSQL with 7-day TTL
-- Registration number-based user identification system
+- Registration number-based user identification (STU/TEA prefix + year + sequence)
+- Parent login using student registration number + 'p' suffix
 
 **Database Design:**
-- PostgreSQL as primary database
+- Supabase PostgreSQL as primary database
 - Drizzle ORM for type-safe database operations
 - Schema-first approach with TypeScript type generation
-- Session management table for authentication persistence
+- Connection pooling with max 5 connections per serverless instance
 - Comprehensive relational schema covering:
   - Users (with role-based permissions)
   - Students (with parent details, academic categories)
@@ -89,25 +118,20 @@ Preferred communication style: Simple, everyday language.
   - Complaints and responses
   - Assets, library books, lost & found items
   - Certificates
-
-**Data Storage Strategy:**
-- All business logic handled through a centralized `storage.ts` module
-- CRUD operations abstracted into reusable functions
-- Transactions not explicitly implemented but can be added for multi-step operations
+  - OTP codes and password reset tokens
 
 ### Build & Deployment
 
-**Build Process:**
-- Custom build script using esbuild for server bundling
-- Vite for client-side bundling with React plugin
-- Production build separates client assets into `dist/public`
-- Server bundled to single `dist/index.cjs` file
-- Whitelisted dependencies bundled to reduce cold start times
+**Vercel Deployment:**
+- `npm run build:vercel` - Builds frontend only (Vite)
+- Vercel auto-compiles API functions from `/api` directory
+- `vercel.json` configures rewrites and function settings
+- SPA routing handled via catch-all rewrite to index.html
 
 **Development Environment:**
+- `npm run dev` - Runs Express server with Vite middleware
 - Hot Module Replacement (HMR) via Vite
-- Replit-specific development plugins (runtime error overlay, cartographer, dev banner)
-- TypeScript type checking without emit
+- Local development uses Express session-based auth
 - Path aliases for clean imports (@/, @shared/, @assets/)
 
 ## External Dependencies
@@ -118,19 +142,16 @@ Preferred communication style: Simple, everyday language.
 - Resend API for transactional emails (password resets, OTPs, welcome emails)
 - Configured via `RESEND_API_KEY` environment variable
 - Graceful degradation when not configured (logs warnings but doesn't crash)
-
-**SMS/Phone Verification:**
-- Prelude SDK for phone OTP verification
-- Configured via `PRELUDE_API_KEY` environment variable
-- Used for passwordless authentication flow
+- From address: noreply@iltacademy.in
 
 ### Database
 
-**PostgreSQL:**
+**Supabase PostgreSQL:**
 - Primary data store for all application data
-- Connection string via `DATABASE_URL` environment variable
-- Session storage using `connect-pg-simple` adapter
-- Drizzle migrations stored in `/migrations` directory
+- Connection string via `SUPABASE_DATABASE_URL` environment variable
+- Session Pooler connection with transaction mode
+- URL-encoded password handling (@ → %40)
+- Drizzle migrations via `npm run db:push`
 
 ### UI Component Libraries
 
@@ -147,14 +168,16 @@ Preferred communication style: Simple, everyday language.
 - bcryptjs for password hashing
 - date-fns for date manipulation
 - zod for runtime type validation
-- nanoid for unique ID generation
 - React Hook Form for form state management
+- @vercel/node for serverless function types
 
 ### Environment Variables Required
 
-- `DATABASE_URL` - PostgreSQL connection string (required)
-- `SESSION_SECRET` - Session encryption key (required)
-- `RESEND_API_KEY` - Email service API key (optional)
-- `PRELUDE_API_KEY` - Phone OTP service API key (optional)
+**Required:**
+- `SUPABASE_DATABASE_URL` - Supabase PostgreSQL connection string
+- `SESSION_SECRET` - JWT signing secret key
+
+**Optional:**
+- `RESEND_API_KEY` - Email service API key
 - `NODE_ENV` - Environment mode (development/production)
-- `REPL_ID` - Replit environment identifier (for dev tools)
+- `VERCEL_URL` - Auto-set by Vercel for production URL
