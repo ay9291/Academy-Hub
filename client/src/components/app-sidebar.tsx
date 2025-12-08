@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import logoImage from "@assets/503100622_17958379334946261_9177229977861200189_n_1765183769224.jpg";
 import {
   LayoutDashboard,
   Users,

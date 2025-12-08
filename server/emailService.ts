@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const FROM_EMAIL = 'ILT Academy <onboarding@resend.dev>';
+const FROM_EMAIL = 'ILT Academy <noreply@iltacademy.in>';
 
 export async function sendPasswordResetEmail(
   email: string,
