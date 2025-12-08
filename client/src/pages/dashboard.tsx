@@ -273,30 +273,20 @@ function AdminDashboard() {
               <CardTitle>Students Requiring Attention</CardTitle>
               <CardDescription>Based on attendance and performance</CardDescription>
             </div>
-            <Button variant="outline" size="sm">View All</Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { name: "Rahul Sharma", issue: "Low Attendance", percentage: 62, tag: "at_risk" },
-                { name: "Priya Patel", issue: "Declining Grades", percentage: 55, tag: "needs_mentoring" },
-                { name: "Amit Kumar", issue: "Fee Overdue", percentage: 0, tag: "at_risk" },
-                { name: "Sneha Reddy", issue: "Homework Pending", percentage: 45, tag: "needs_mentoring" },
-              ].map((student, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium">{student.name.split(" ").map(n => n[0]).join("")}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{student.name}</p>
-                    <p className="text-sm text-muted-foreground">{student.issue}</p>
-                  </div>
-                  <Badge variant={student.tag === "at_risk" ? "destructive" : "secondary"} size="sm">
-                    {student.tag === "at_risk" ? "At Risk" : "Needs Mentoring"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            {stats?.totalStudents === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No students enrolled yet</p>
+                <p className="text-sm">Add students to see insights here</p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500" />
+                <p>All students are on track</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -354,13 +344,12 @@ function TeacherDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-medium">{schedule.batch}</p>
-                      <Badge variant="outline" size="sm">{schedule.subject}</Badge>
+                      <Badge variant="outline">{schedule.subject}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{schedule.time} • {schedule.room}</p>
                   </div>
                   <Badge
                     variant={schedule.status === "completed" ? "secondary" : schedule.status === "ongoing" ? "default" : "outline"}
-                    size="sm"
                   >
                     {schedule.status === "completed" && <CheckCircle2 className="h-3 w-3 mr-1" />}
                     {schedule.status === "ongoing" && <Clock className="h-3 w-3 mr-1" />}
@@ -452,7 +441,7 @@ function ParentDashboard() {
               <div>
                 <h3 className="text-xl font-semibold">Rahul Sharma</h3>
                 <p className="text-muted-foreground">JEE Batch A • Class 12</p>
-                <Badge variant="secondary" size="sm" className="mt-1">Roll No: JEE-2024-042</Badge>
+                <Badge variant="secondary" className="mt-1">Roll No: JEE-2024-042</Badge>
               </div>
             </div>
           </div>
@@ -539,7 +528,7 @@ function ParentDashboard() {
               ].map((hw, index) => (
                 <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div>
-                    <Badge variant="outline" size="sm" className="mb-1">{hw.subject}</Badge>
+                    <Badge variant="outline" className="mb-1">{hw.subject}</Badge>
                     <p className="font-medium">{hw.title}</p>
                   </div>
                   <div className="text-right">

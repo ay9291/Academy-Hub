@@ -123,12 +123,10 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src={logoImage} alt="ILT Academy" className="h-10 w-10 rounded-lg object-contain" />
           <div className="flex-1 min-w-0">
             <h2 className="font-bold truncate" data-testid="text-sidebar-title">ILT Academy</h2>
-            <p className="text-xs text-muted-foreground truncate">Management System</p>
+            <p className="text-xs text-muted-foreground truncate">Learn Grow Excel</p>
           </div>
         </div>
       </SidebarHeader>
