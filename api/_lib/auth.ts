@@ -32,7 +32,7 @@ function base64UrlDecode(str: string): string {
 
 function createSignature(header: string, payload: string): string {
   const data = `${header}.${payload}`;
-  return crypto.createHmac("sha256", JWT_SECRET).update(data).digest("base64url");
+  return crypto.createHmac("sha256", JWT_SECRET!).update(data).digest("base64url");
 }
 
 export function createAccessToken(userId: string, userRole: string): string {
@@ -129,7 +129,7 @@ export function withAuth(
     req: VercelRequest,
     res: VercelResponse,
     user: TokenPayload
-  ) => Promise<void>
+  ) => Promise<void | VercelResponse>
 ) {
   return async (req: VercelRequest, res: VercelResponse) => {
     const token = getTokenFromRequest(req);
