@@ -1,0 +1,31 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { storage } from "../_lib/storage";
+import { withAuth, corsHeaders, TokenPayload } from "../_lib/auth";
+
+async function handler(req: VercelRequest, res: VercelResponse, user: TokenPayload) {
+  corsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  const { id } = req.query;
+
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ message: "Invalid study material ID" });
+  }
+
+  if (req.method !== "DELETE") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  try {
+    await storage.deleteStudyMaterial(id);
+    return res.status(204).end();
+  } catch (error) {
+    console.error("Study material error:", error);
+    return res.status(500).json({ message: "Operation failed" });
+  }
+}
+
+export default withAuth(handler);
